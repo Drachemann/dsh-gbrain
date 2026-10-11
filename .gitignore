@@ -65,3 +65,13 @@ graphify-out/
 # Local eval run ledger (gbrain eval run-all / longmemeval / canary --record);
 # each machine keeps its own, so it is never committed.
 /.gbrain-evals/eval-results.jsonl
+
+# Auto-managed by gbrain (db_only directories)
+media/x/
+media/articles/
+meetings/transcripts/
+
+# Per-worktree gbrain code source pin (kubectl-style context). Written by hand or by a
+# sync skill; it routes bare `gbrain` commands issued from this worktree to this source.
+# Not shared: every checkout pins its own, so it is never committed.
+/.gbrain-source
