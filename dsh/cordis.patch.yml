@@ -1,0 +1,54 @@
+# dsh-gbrain — bundle patch (HOST composition).
+#
+# One row, in the Host composition, because everything it publishes is shared across
+# sessions:
+#
+#   gbrainBrain     the warm-engine request surface. A resident Bun helper owns one
+#                   connection to the Postgres brain and answers NDJSON over a Unix
+#                   socket; this service is the client for it.
+#   gbrainBackend   the versioned, narrow contract the dsh-memory-evolve fork consumes
+#                   (see lib/backend-contract.js). Versioned from the first commit
+#                   because its consumer does not exist yet.
+#
+# NO TOOL IS REGISTERED HERE, AND THAT IS THE POINT. The fourteen tools live in
+# ./presets/gbrain-tools.patch.yml, because a session's affordances belong to the
+# preset that session runs. This mirrors dsh-wyrmbrain, whose host row says the same.
+#
+# WHY A SEPARATE PROCESS. DSH executes under Node and gbrain's TypeScript cannot load
+# there at all: 72 parameter properties across 65 files fail Node's strip-only mode,
+# and 11 modules use Bun-only `with { type: 'file' }` imports. The helper runs under
+# Bun and touches gbrain's EXPORTED SUBPATHS (engine-factory, operations) rather than
+# its internal module paths, which is what keeps an upstream merge cheap.
+#
+# REQUIRED CONFIGURATION, and it is not optional:
+#
+#   databaseUrl   the Postgres connection string. Deliberately unset in the package,
+#                 following dsh-gstack's stateDir precedent: the harness process cwd is
+#                 ~/.dsh, not the session project, so a per-deployment value must come
+#                 from the profile. Resolution order is config.databaseUrl, then
+#                 GBRAIN_DATABASE_URL. With neither set the row ACTIVATES but reports
+#                 degraded, and every brain call fails with brain_not_configured naming
+#                 both remedies. It does not fail activation.
+#
+#   memorySourceId  where a write goes. A write lands here when set, otherwise in the
+#                 project's own source, and never in a code mirror by accident.
+#
+#   codeTools     default true. Set false to withdraw the six code-graph tools while
+#                 leaving retrieval and memory available. This exists because the code
+#                 reads are suspended for agent callers upstream (garrytan/gbrain#5052)
+#                 and this plugin re-implements the equivalent guard locally; an
+#                 operator who wants to record that consent explicitly can.
+#
+# # GENERATED FILE — do not edit.
+# Source: dsh/lib/tools.js
+# Generator: dsh/scripts/gen-surface.mjs
+# Regenerate: node dsh/scripts/gen-surface.mjs
+# Drift check: node dsh/scripts/gen-surface.mjs --check
+- insert:
+    - id: gbrain
+      name: dsh-gbrain
+      config:
+        enabled: true
+        # databaseUrl: <postgres-connection-string>
+        # memorySourceId: <source-id>
+        codeTools: true
