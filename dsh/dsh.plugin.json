@@ -1,0 +1,37 @@
+// GENERATED FILE — do not edit.
+// Source: dsh/lib/tools.js
+// Generator: dsh/scripts/gen-surface.mjs
+// Regenerate: node dsh/scripts/gen-surface.mjs
+// Drift check: node dsh/scripts/gen-surface.mjs --check
+{
+  "id": "dsh-gbrain/dsh-gbrain",
+  "version": "1.0.0",
+  "main": "./lib/index.js",
+  "description": "gbrain as a native DeepSeek Harness plugin: a warm Postgres-backed code-intelligence and coding-memory engine behind fourteen tools, with the heavy lifting in a resident Bun helper.",
+  "engines": {
+    "dsh": ">=0.2.0-rc.1"
+  },
+  "contributes": {
+    "tools": [
+      "code_def",
+      "code_refs",
+      "code_callers",
+      "code_callees",
+      "code_blast",
+      "code_flow",
+      "query",
+      "get_page",
+      "put_page",
+      "recall",
+      "remember",
+      "forget",
+      "context_pack",
+      "delta"
+    ],
+    "services": [
+      "gbrainBrain",
+      "gbrainBackend"
+    ],
+    "hooks": []
+  }
+}

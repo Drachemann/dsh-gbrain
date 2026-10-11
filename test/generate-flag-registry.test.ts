@@ -183,6 +183,13 @@ describe('segmentDispatchBlocks — every if/case shape is a marker for its comm
     expect(CLI_FLAG_REGISTRY.reindex).toContain('--multimodal');
   });
 
+  // #dur: these four assertions each rebuild the whole CLI flag registry (buildFlagRegistry),
+  // measured at 3.6-5.4s on this machine against Bun's 5s per-test default. On an idle box they
+  // fit; while `bun run test` saturates the CPU they exceed it, and the freshness check then
+  // reports "STALE CLI flag registry" -- a timeout being read as a staleness verdict. bunfig.toml
+  // already raised the repo-wide default to 60s for this exact reason ("default 5s is too short
+  // for those tests' beforeAll hooks"); these four predate that and never got the headroom.
+  // Measured: at --timeout=60000 all 16 pass, including two concurrent copies.
   test('committed registry: brainstorm/lsd do not carry the phantom --retry-judge (#4766)', () => {
     // The flag had no parser branch; it registered only because the judge-failed
     // advice strings in the brainstorm orchestrator mentioned it. The advice now
@@ -194,7 +201,7 @@ describe('segmentDispatchBlocks — every if/case shape is a marker for its comm
     const fresh = buildFlagRegistry();
     expect(fresh.brainstorm).not.toContain('--retry-judge');
     expect(fresh.lsd).not.toContain('--retry-judge');
-  });
+  }, 60_000);
 
   test('committed registry: reindex-search-vector does not carry the phantom --fresh (wave review)', () => {
     // The command parses only --dry-run/--yes/--json. `--fresh` reached the row
@@ -207,13 +214,13 @@ describe('segmentDispatchBlocks — every if/case shape is a marker for its comm
     const fresh = buildFlagRegistry();
     expect(fresh['reindex-search-vector']).not.toContain('--fresh');
     expect(fresh['reindex-search-vector']).toContain('--yes');
-  });
+  }, 60_000);
 
   test('the real handleCliOnly yields one block per eval bypass sub-owner', () => {
     // Pin against src/cli.ts: every sub-owned no-DB bypass must land on eval.
     const fresh = buildFlagRegistry();
     for (const f of LONGMEMEVAL_FLAGS) expect(fresh.eval).toContain(f);
-  });
+  }, 60_000);
 });
 
 describe('committed registry — eval row attribution (acceptance)', () => {
@@ -305,7 +312,7 @@ describe('block-level module scan — only ./commands/*.ts handlers are command 
     expect(validateCommandFlags('agent', ['register', '--delete-brain'])).toBe('--delete-brain');
     expect(validateCommandFlags('agent', ['register', '--confirm-destructive'])).toBe('--confirm-destructive');
     expect(validateCommandFlags('agent', ['register', '--harness', 'claude-code', '--preset', 'coding'])).toBeNull();
-  });
+  }, 60_000);
 
   test('./core/* helper imports inside a dispatch block are not scanned as command modules', () => {
     // think's `if` block reaches ./core/brain-registry.ts (--db-url, --path);

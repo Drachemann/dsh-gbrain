@@ -1,0 +1,45 @@
+{
+  "name": "dsh-gbrain",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "gbrain as a native DeepSeek Harness plugin: a warm Postgres-backed code-intelligence and coding-memory engine behind fourteen tools, with the heavy lifting in a resident Bun helper.",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./protocol": "./lib/protocol.js",
+    "./paths": "./lib/paths.js",
+    "./hash": "./lib/hash.js",
+    "./log": "./lib/log.js",
+    "./routing": "./lib/brain-routing.js",
+    "./client": "./lib/brain-client.js",
+    "./result": "./lib/result.js",
+    "./tools": "./lib/tools-entry.js",
+    "./backend-contract": "./lib/backend-contract.js",
+    "./package.json": "./package.json",
+    "./tools-list": "./lib/tools.js",
+    "./tools-exec": "./lib/tools-exec.js",
+    "./entry": "./lib/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/",
+    "gen:surface": "node scripts/gen-surface.mjs",
+    "check:surface": "node scripts/gen-surface.mjs --check"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": [
+        "./cordis.patch.yml",
+        "./presets/gbrain-tools.patch.yml"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.0",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.1 <0.3.0"
+  },
+  "license": "MIT"
+}

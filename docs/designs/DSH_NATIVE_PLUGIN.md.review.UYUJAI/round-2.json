@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "round": 2,
+  "document": "/home/matt/src/dsh-gbrain/docs/designs/DSH_NATIVE_PLUGIN.md",
+  "quality_score": 7,
+  "dimensions": {
+    "completeness": "ISSUES",
+    "consistency": "ISSUES",
+    "clarity": "ISSUES",
+    "scope": "PASS",
+    "feasibility": "ISSUES"
+  },
+  "findings": [
+    {
+      "id": "R2-1",
+      "dimension": "completeness",
+      "problem": "The Chosen Shape says the preset row's copied plugin list must be generated rather than hand-maintained, and Layout, The Operation Surface and Next Step 5 now name dsh/scripts/gen-surface.mjs, but the generator's declared input is dsh/lib/tools.js - gbrain's own fourteen tools - and check-surface.mjs and Success Criterion 6 compare the manifest, both patches and the README to that one list. Nothing in the document derives the copied DSH plugin list from the shipped DSH preset or re-checks it when DSH ships a new tool, so the failure the generator paragraph names (a future DSH release adds a tool and the preset silently loses it) is still unguarded, and Layout keeps that copy in hand-written *.tmpl.yml files.",
+      "remedy": "State where the copied DSH plugin list comes from at generation time (the installed preset and its declaration id) and extend gen-surface.mjs --check to compare the copy against the shipped preset it shadows, or record the manual re-copy step in Gates and Next Steps together with the DSH release that triggers it."
+    },
+    {
+      "id": "R2-2",
+      "dimension": "completeness",
+      "problem": "Next Step 7 now names the profile (dsh --profile web) and adds a preset --dump-config plus a new-session tool check, but the dump runs against the hand-written dsh/presets/gbrain-tools.patch.tmpl.yml rather than the generated presets/gbrain-tools.patch.yml that Layout says the bundle installs and that check-surface.mjs validates; the preset declaration row the patch overrides or extends is still not named anywhere in the document (it is deferred to that file's header); and Success Criterion 6 remains a static agreement check, so no success criterion requires evidence that a new session actually declares the fourteen tools.",
+      "remedy": "Name the preset declaration row and its profile in the document, run --dump-config against the generated preset patch the bundle installs (or state why the template and the generated file are equivalent), and add a success criterion that a new session declares the fourteen tools and that they match lib/tools.js."
+    },
+    {
+      "id": "R2-3",
+      "dimension": "completeness",
+      "problem": "Registration now appears: the Distribution Plan and Next Step 1 run gbrain sources add dsh-gbrain --path <repo> and gbrain sync --source dsh-gbrain. The lifecycle still stops there - no cadence, hook, watcher or job re-syncs after code edits, branch switches or an upstream merge, no staleness is surfaced to the model, and reindex-code remains excluded with no named replacement operator path - so the graph that answers who calls performSync is correct only on install day, which does not support the pitch.",
+      "remedy": "State who runs sync or reindex and when (install step, session-start hook, watcher or scheduled job), name the operator command that re-indexes code, and surface staleness to the model (for example an indexed-at or possibly-stale field on code-tool results) with a test."
+    },
+    {
+      "id": "R2-4",
+      "dimension": "consistency",
+      "problem": "Write Policy says a misrouted write is corrected with forget for a remembered fact and with gbrain's version history (get_versions / revert_version) for a page, and that neither is exposed as a tool in this wave because the operator runs them. forget is one of the fourteen tools in The Operation Surface table (recall, remember, context_pack, forget, delta), so the sentence either contradicts the declared surface or leaves the reader unable to tell which undo paths the model has.",
+      "remedy": "Split the sentence: forget is a session tool and is the model-available withdrawal path, while only get_versions and revert_version are operator-only in this wave; keep the README list consistent with lib/tools.js."
+    },
+    {
+      "id": "R2-5",
+      "dimension": "consistency",
+      "problem": "P1 says the Host row exists because five code operations refuse remote callers outright, while The Operation Surface lists six code-graph tools and says all six are refused to MCP callers, and Constraint 2 says the wrapper covers every code read. Two counts describe the same refusal set, and Next Step 1's go/no-go cannot be read against either of them.",
+      "remedy": "Derive one number from src/core/ops/code-intel.ts (or the test that pins the refusal) and use it in P1, Constraint 2 and The Operation Surface."
+    },
+    {
+      "id": "R2-6",
+      "dimension": "consistency",
+      "problem": "MEM-3 has two different root causes in this document. Constraint 3 records it as an MCP-mount limitation (the grant binds to the cwd repo's code source, so a memory write is refused, and re-pointing the mount trades away code reads), while the D3 paragraph says PGLite being openable by one process at a time is the entire reason MEM-3 had to choose between memory writes and code reads. D3 removes only the second cause and the Host row only the first, so a reader cannot tell which decision actually fixes MEM-3.",
+      "remedy": "Attribute MEM-3 to both limbs explicitly (engine process exclusivity and the mount's single-source grant) and say which decision - D3, D4 or the Host row - removes each."
+    },
+    {
+      "id": "R2-7",
+      "dimension": "consistency",
+      "problem": "Layout says package.json gets the upstream version bump which upstream rewrites on every release anyway, and Success Criterion 4 counts an auto-rewritten version stamp as new upstream-owned-file content, but no mechanism is named for that rewrite and the design never says whether the fork edits an upstream-owned file that upstream changes on every release. If it does, the Criterion 5 promise of a conflict-free git merge upstream/master is at risk on exactly that file.",
+      "remedy": "State whether the fork edits package.json at all, name what rewrites the stamp on merge if it does, and either drop the bump or record the recurring package.json resolution as an accepted merge cost in Criterion 5."
+    },
+    {
+      "id": "R2-8",
+      "dimension": "consistency",
+      "problem": "The Request schema is fixed as id, op, params and source_id and the Response schema as id, ok, result or id, ok, error, but Timeouts and cancellation says each request carries a deadline, with 15 s and 120 s client defaults and a longer deadline for code_blast and code_flow. The shapes the document declares cannot carry that field, so two conforming implementations would disagree about whether the deadline is on the wire or client-local.",
+      "remedy": "Add the deadline to the request shape (for example deadline_ms, with absolute or relative semantics stated) and a test that an over-deadline request is answered with deadline_exceeded, or state that the deadline is client-local and the helper applies its own per-op cap."
+    },
+    {
+      "id": "R2-9",
+      "dimension": "clarity",
+      "problem": "The Request clause says source_id is required for every op that touches the brain and is rejected for the two ops that do not, but no op that does not touch the brain is ever named: all fourteen tools reach the brain and the lifecycle uses a connect probe and a pid stop rather than requests. The schema also types source_id unconditionally, so an implementer cannot tell which requests are rejected.",
+      "remedy": "Name the two control ops and give them a shape (this is also where the connect probe and owner.json interlock), or delete the clause and require source_id on every request."
+    },
+    {
+      "id": "R2-10",
+      "dimension": "clarity",
+      "problem": "Framing says a request or response over 1 MiB is refused with payload_too_large rather than buffered unbounded, but says nothing about how a response is measured or refused. The helper must serialise before it can know a result's size - code_blast and code_flow, the two ops given the longest deadlines, are the likeliest to exceed it - and the client must read a line before it can reject it. What the caller sees when its own result is refused, and whether the refusal is itself size-bounded, is unspecified.",
+      "remedy": "State who measures a response, that the helper substitutes a bounded payload_too_large error for that request id, and what the client does with an over-limit line from a helper (for example drop the connection and fail in-flight requests with the same code), with a protocol test."
+    },
+    {
+      "id": "R2-11",
+      "dimension": "feasibility",
+      "problem": "Stale-helper detection rests on the hello line {v, hello, plugin, schema}: the client refuses a major-version mismatch with helper_version_skew, which is also said to be how a stale helper left by an older plugin build is detected. Both version sources in this document are 0.x (upstream v0.60.102.0 per Constraint 4, protocol v = 1), so an older plugin build cannot produce a major mismatch, and the schema field's owner (wire protocol or database schema) is never stated. The same clause also says the client never talks to a helper it did not start except when the database fingerprint matches and the version does too - reading the hello is that conversation, and the exception's condition is the fact under test - and the hello carries no database fingerprint for the reuse rule to check.",
+      "remedy": "Put a monotonic build or protocol id and the full database fingerprint in the hello, define which mismatch is fatal and what schema means, and rewrite the rule as: the client may connect and read the hello of any helper on that socket, but sends requests only when the build id and the database fingerprint match, otherwise it stops the helper by pid."
+    },
+    {
+      "id": "R2-12",
+      "dimension": "completeness",
+      "problem": "Routing tier 1 is the session project root's .gbrain-source dotfile, tier 2 is the source registered against that project path, and every write is stamped with the project path - but the document never says how the Host row learns the session project root, and Open Question 4 records that the harness process cwd is ~/.dsh, not the session project. A naive implementation resolves both routing tiers and the provenance stamp against the wrong directory, and the failure would look like an empty brain rather than a bug.",
+      "remedy": "Name the DSH session field or session-start hook that supplies the project root, state its behaviour for a session with no project, and give the fallback failure (for example no_source_for_project) with a test."
+    },
+    {
+      "id": "R2-13",
+      "dimension": "completeness",
+      "problem": "Constraint 2 records that every code read refuses callers whose ctx.remote is not false (upstream issue #5052) and that MCP cannot serve the code graph on any surface, and the design deliberately makes those operations reachable to agent-facing sessions through a trusted local helper. The document never records what #5052 suspended those operations for, nor argues why a user-scoped socket answers that risk, so Success Criterion 2's claim that no new path exists for a remote caller cannot be evaluated and the plugin's value proposition rests on an unexplained bypass of an upstream control.",
+      "remedy": "State the reason for the #5052 suspension (from the issue or the test that pins the message) and argue the threat model explicitly, or make the code tools an explicit opt-in that a profile must enable."
+    },
+    {
+      "id": "R2-14",
+      "dimension": "completeness",
+      "problem": "The Distribution Plan ends with plugin_manager install_bundle, while the Host row's database_url comes from a profile-side value (Open Question 4) and the flow only ever exports GBRAIN_DATABASE_URL in a shell. No step configures the plugin, and no behaviour is stated for a Host row whose database_url is unset - activation failure, environment fallback, or a degraded service - unlike the routing contract's explicit no_source_for_project refusal for the analogous missing source.",
+      "remedy": "Add the profile-side configuration step to the Distribution Plan and specify the unset-database_url behaviour (a named activation failure or a documented GBRAIN_DATABASE_URL fallback) with a test."
+    }
+  ],
+  "prior": [
+    {
+      "id": "R1-1",
+      "status": "persisting",
+      "evidence": "The generator now exists, is laid out and is gated (Layout names dsh/scripts/gen-surface.mjs and scripts/check-surface.mjs; The Operation Surface says the manifest, both patches and the README are generated from lib/tools.js; Gates and Success Criterion 6 run check-surface.mjs), so the round-1 layout and check gaps are closed. The same-specific obligation in that finding - a future DSH release adds a tool and the preset silently loses it - is still unmet: the generator's only stated input is gbrain's own tool list, nothing derives or re-checks the copied DSH plugin list against the shipped preset, and Layout keeps that copy in hand-written *.tmpl.yml files. See R2-1.",
+      "current_id": "R2-1"
+    },
+    {
+      "id": "R1-2",
+      "status": "persisting",
+      "evidence": "Next Step 7 names the profile (dsh --profile web), adds a preset --dump-config and a new-session tool check. Still unmet: the dump targets the hand-written dsh/presets/gbrain-tools.patch.tmpl.yml rather than the generated presets/gbrain-tools.patch.yml the bundle installs, the preset declaration row the patch overrides or extends is named nowhere in the document (deferred to that file's header), and the new-session activation requirement is not a success criterion - Criterion 6 is a static on-disk agreement check. See R2-2.",
+      "current_id": "R2-2"
+    },
+    {
+      "id": "R1-3",
+      "status": "persisting",
+      "evidence": "The Distribution Plan and Next Step 1 now run gbrain sources add dsh-gbrain --path <repo> and gbrain sync --source dsh-gbrain, so Criterion 1 is reachable once. Still unmet: no cadence, hook or scheduled job for later freshness, no staleness surface, and no replacement operator path for the excluded reindex-code - the round-1 problem named exactly those as unaddressed. See R2-3.",
+      "current_id": "R2-3"
+    },
+    {
+      "id": "R1-4",
+      "status": "resolved",
+      "evidence": "Routing and Trust Contract now specifies the three-tier source resolution (session-root .gbrain-source dotfile, then the source registered against the project path, then a no_source_for_project failure that does not fall back to default), the per-session allowed set (project source plus memorySourceId, else source_not_allowed, logged), the socket path and mode (0600 inside 0700) with an SO_PEERCRED / LOCAL_PEERCRED uid check, and states that Success Criterion 2 is carried by two tests.",
+      "current_id": null
+    },
+    {
+      "id": "R1-5",
+      "status": "resolved",
+      "evidence": "The Wire Contract fixes framing (NDJSON, UTF-8, 1 MiB cap), a version handshake, the request and response shapes, the error envelope as gbrain's code / why / fix shape, per-op deadlines with a stated no-cancellation posture in v1, a concurrency model (concurrent reads, serialised writes), restart behaviour with flap protection, and lifecycle (start on activation, stop on dispose); it states that every clause gets a test in dsh/test/protocol.test.js.",
+      "current_id": null
+    },
+    {
+      "id": "R1-6",
+      "status": "resolved",
+      "evidence": "The Operation Surface's section on how a degraded result reaches the model, plus dsh/lib/result.js in Layout and Next Step 6, preserves code / why / fix verbatim, renders run and wait, surfaces tell_user_to_run and ask_user as a blocked result that says it needs the user, and passes [gbrain notice] and [AGENT] blocks through unstripped; Success Criterion 7 requires a test for new behaviour.",
+      "current_id": null
+    },
+    {
+      "id": "R1-7",
+      "status": "resolved",
+      "evidence": "Search mode and the keyless claim names the three tools that depend on the brain's search mode and an embedding provider, states that the install flow stops and relays gbrain's own cost matrix rather than accepting a default, and states what those tools do in --no-embedding mode; the Distribution Plan and The Assignment carry the stop-and-choose-search-mode step.",
+      "current_id": null
+    },
+    {
+      "id": "R1-8",
+      "status": "resolved",
+      "evidence": "The Distribution Plan writes ~/.gbrain-pg.env under umask 077, exports a full GBRAIN_DATABASE_URL built from that file, creates the gbrain-pgdata volume and mounts it at /var/lib/postgresql/data with --restart unless-stopped, and names the volume, restart policy, umask and export as load-bearing.",
+      "current_id": null
+    },
+    {
+      "id": "R1-9",
+      "status": "resolved",
+      "evidence": "The Distribution Plan runs bun link and says explicitly that it puts the fork's gbrain on PATH, explains that a bare gbrain may be an upstream build from a different commit, installs the bundle as plugin_manager install_bundle target link:<repo>/dsh (the family's link: spec form), and The Assignment uses bun src/cli.ts consistently.",
+      "current_id": null
+    },
+    {
+      "id": "R1-10",
+      "status": "resolved",
+      "evidence": "The Backend Contract is descoped to a versioned stub: BACKEND_VERSION = 1, a single negotiate({ wants }) returning version, the operation list and writes: caller, write ownership stated, request and response shapes explicitly deferred to the session that builds the consumer, and the failing test named (dsh/test/backend-contract.test.js) with its three assertions.",
+      "current_id": null
+    },
+    {
+      "id": "R1-11",
+      "status": "resolved",
+      "evidence": "The Lifecycle clause specifies start on activation and stop on dispose (covering plugin upgrade and remove_bundle), unlinking a stale socket after a connect probe, detecting and pid-stopping a helper that outlives its plugin via the socket directory's owner.json, flap protection (three restarts in sixty seconds), and Next Step 4 names tests for start, stop, version-skew, stale-socket and orphan-recovery.",
+      "current_id": null
+    },
+    {
+      "id": "R1-12",
+      "status": "resolved",
+      "evidence": "Write Policy states the target (the session's memorySourceId when configured, otherwise the project's own source, never a code mirror), the provenance fields (session id, project path, plugin version, tool name), that consent is the harness's own approval policy with no second layer invented, that every write returns the slug, the source and created-or-updated, and the reversal paths (forget; get_versions and revert_version).",
+      "current_id": null
+    },
+    {
+      "id": "R1-13",
+      "status": "resolved",
+      "evidence": "Logging specifies the path (~/.dsh/gbrain/logs/helper-<fingerprint>.jsonl), mode 0600 in a 0700 directory, one JSON object per line with 5x5 MiB ring rotation, the levels, and the rule that payloads are never logged with put_page and remember redacted to slug and byte count, and states that the test proving payloads absent is part of the contract.",
+      "current_id": null
+    },
+    {
+      "id": "R1-14",
+      "status": "resolved",
+      "evidence": "The Operation Surface table names fourteen tools (the six code-graph tools, query, get_page, put_page and the five verbs recall, remember, context_pack, forget, delta), states that dsh/lib/tools.js is the single source of truth for the list, and Success Criterion 6 plus check-surface.mjs derive the count from that file.",
+      "current_id": null
+    },
+    {
+      "id": "R1-15",
+      "status": "resolved",
+      "evidence": "Gates is now one canonical list of nine commands (bun install, typecheck, verify, test, regen:all --check, test:e2e, ci:local, node --test dsh/test/, node dsh/scripts/check-surface.mjs) with the statement that all nine are release conditions; Success Criterion 3 and Constraint 5 reference that list rather than restating a shorter one.",
+      "current_id": null
+    },
+    {
+      "id": "R1-16",
+      "status": "resolved",
+      "evidence": "Layout and the paragraph on which repository gates inspect dsh/ put the new job in a newly created fork-owned .github/workflows/dsh-plugin.yml, state that it is not an edit to an upstream workflow, and name the reason (workflow files are where upstream churn concentrates).",
+      "current_id": null
+    },
+    {
+      "id": "R1-17",
+      "status": "resolved",
+      "evidence": "P1 is restated to say the Host row publishes the engine service and the backend contract and registers no tool, with the preset row carrying the tool declarations, and The Chosen Shape repeats that placement.",
+      "current_id": null
+    },
+    {
+      "id": "R1-18",
+      "status": "resolved",
+      "evidence": "The Chosen Shape states one shape (Host row supervising a resident Bun helper over NDJSON, preset row carrying the tools), D4 records the runtime host, the Approach A/B/C labelling is gone, the reused boundary is limited to ./engine-factory, ./operations and ./config, and D3 puts PGLite out of scope entirely.",
+      "current_id": null
+    },
+    {
+      "id": "R1-19",
+      "status": "resolved",
+      "evidence": "The socket is keyed by a fingerprint of database_url, a second profile pointing at a different database gets its own helper rather than querying the first profile's brain, a second profile on the same database reuses the helper with the stated reason, and Open Question 4 pairs the profile-side database_url with the per-database socket key.",
+      "current_id": null
+    },
+    {
+      "id": "R1-20",
+      "status": "resolved",
+      "evidence": "Success Criterion 4 now diffs upstream/master and states explicitly that origin/master is the fork's own remote and is not the comparison.",
+      "current_id": null
+    },
+    {
+      "id": "R1-21",
+      "status": "resolved",
+      "evidence": "Constraint 6 no longer exists; Constraints 1 through 5 contain no prohibition on a tools declaration row, and the Host-row and preset-row split in P1 and The Chosen Shape is consistent with the tools living in a preset declaration that the wyrmbrain precedent supports.",
+      "current_id": null
+    },
+    {
+      "id": "R1-22",
+      "status": "resolved",
+      "evidence": "The Chosen Shape fixes the boundary as gbrain's exported subpaths (./engine-factory, ./operations, ./config) and says the CLI is deliberately not the boundary, and Open Question 2 records the relative-import fallback.",
+      "current_id": null
+    },
+    {
+      "id": "R1-23",
+      "status": "resolved",
+      "evidence": "The section titled The Advisory Seam: Descoped states that no advisory code ships in this wave and records the later intent for a session that has a real consumer; Next Step 7 no longer builds the planAdvisory seam or the external advisory kind.",
+      "current_id": null
+    },
+    {
+      "id": "R1-24",
+      "status": "resolved",
+      "evidence": "Next Step 1 and The Assignment both run bun src/cli.ts code-callers --source dsh-gbrain performSync, Next Step 1 states that the --source flag is not optional and why, requires both outputs to be recorded as the decision evidence, and says a refusal must be quoted verbatim and stops construction.",
+      "current_id": null
+    },
+    {
+      "id": "R1-25",
+      "status": "resolved",
+      "evidence": "The paragraph on which repository gates inspect dsh/ states that no upstream gate covers it (test discovery and module-size and coverage accounting are scoped to src/ and test/), gives dsh/ its own fork-owned workflow, and Gates and Next Step 10 make node --test dsh/test/ and check-surface.mjs release conditions.",
+      "current_id": null
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+name: dsh plugin
+
+# FORK-OWNED. Upstream never touches this file, which is the whole reason it
+# exists in this shape: gbrain's own gates cannot inspect `dsh/` by construction,
+# so without this workflow the entire plugin subtree is green only when a human
+# types the command by hand.
+#
+# Why gbrain's gates miss it. `bun run verify` is a fixed battery of 76 guard
+# scripts, all scoped to `src/` and `test/`. `bun run test` shards `bun test`
+# over gbrain's own `test/**/*.test.ts`. Neither descends into `dsh/`. So the
+# failures this workflow catches are real and previously unguarded:
+#
+#   * a tool added to `dsh/lib/tools.js` without regenerating the manifest and
+#     both patch files  -> the generator `--check` fails here
+#   * a manifest or README advertising a tool the surface does not carry
+#     -> `gen-surface.mjs --check` fails here
+#   * an upstream DSH release shipping a preset plugin our copied preset list
+#     does not carry -> `gen-preset.mjs --check` fails here
+#   * any behavioural regression in the plugin itself -> the suite fails here
+#
+# Deliberately NOT a `paths:` filter. The point is to notice when something
+# *outside* `dsh/` changes the answer — a DSH upgrade, a lockfile bump — so this
+# runs on every push and PR to master, not only on `dsh/**` edits.
+#
+# Runner note: this uses `ubuntu-latest`, NOT the `ubicloud-standard-*` labels the
+# rest of the repo uses. Those are upstream's paid fleet; a fork published for
+# other people must not silently depend on them.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dsh-plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      # Same pin the rest of the repo uses (57 call sites) — resolved from the
+      # tree, not guessed.
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6  # v2
+
+      # `node --test`, never `bun test`. Bun does not descend into
+      # dot-directories, and this family has already been bitten by that once
+      # (a suite that silently discovered ZERO tests and reported green).
+      - name: Plugin suite (node --test dsh/test/)
+        run: node --test dsh/test/
+
+      # The declared surface is the contract. These three steps are the guard
+      # for the manifest / patch / README trio: each exits non-zero the moment
+      # disk disagrees with `dsh/lib/tools.js` or with the installed preset.
+      - name: Declared surface agrees with lib/tools.js
+        run: node dsh/scripts/gen-surface.mjs --check
+
+      - name: Preset row agrees with the installed shipped preset
+        run: node dsh/scripts/gen-preset.mjs --check
+
+      # Strict tsc over product code. gbrain's own gate runs this too; it is
+      # repeated here so this workflow is meaningful in isolation when someone
+      # clones the fork and runs only the plugin lane.
+      - name: Typecheck
+        run: bun run typecheck
+
+      # Provenance, not a gate: the artefact a receiver would install. Cheap,
+      # and it makes a failed install visible in the log rather than at
+      # bundle-install time in someone else's profile.
+      - name: Bundle composes (dump-config)
+        run: |
+          set -euo pipefail
+          echo "--- patch files the bundle declares ---"
+          node -e "
+            const p = require('./dsh/package.json');
+            const patches = p.dsh?.bundle?.patch ?? [];
+            if (patches.length === 0) {
+              console.error('dsh/package.json declares no dsh.bundle.patch — a bundle with no patch mounts nothing');
+              process.exit(1);
+            }
+            for (const f of patches) console.log(f);
+          "
